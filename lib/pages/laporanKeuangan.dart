@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http; // Importing http package
+import 'dart:convert'; // Importing dart:convert for JSON decoding
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class LaporanKeuangan extends StatefulWidget {
   @override
@@ -7,6 +13,126 @@ class LaporanKeuangan extends StatefulWidget {
 
 class _LaporanKeuanganState extends State<LaporanKeuangan> {
   String selectedTab = 'Laba Rugi';
+
+  Future<List<List<String>>> fetchData() async {
+    final response =
+        await http.get(Uri.parse('${dotenv.env['url']}/getbukuBesarKredit'));
+    if (response.statusCode == 200) {
+      List<dynamic> jsonData = json.decode(response.body);
+
+      Map<String, List<List<String>>> groupedData = {};
+      Map<String, double> subtotals = {};
+
+      for (var item in jsonData) {
+        String kelompok = item['kelompok'];
+        // Only process items with 'kelompok' of 'Pendapatan' or 'Beban'
+        if (kelompok == "Pendapatan" || kelompok == "Beban") {
+          double kredit = double.parse(item['kredit'].toString());
+          if (!groupedData.containsKey(kelompok)) {
+            groupedData[kelompok] = [];
+            subtotals[kelompok] = 0.0; // Initialize subtotal for this group
+          }
+          groupedData[kelompok]!.add(
+              [kelompok, item['deskripsi'], 'Rp ${kredit.toStringAsFixed(2)}']);
+          subtotals[kelompok] =
+              subtotals[kelompok]! + kredit; // Sum up the credits
+        }
+      }
+
+      List<List<String>> tableData = [
+        ['Kelompok', 'Deskripsi', 'Jumlah']
+      ];
+      groupedData.forEach((kelompok, rows) {
+        tableData.addAll(rows);
+        tableData.add([
+          '',
+          'Total $kelompok',
+          'Rp ${subtotals[kelompok]!.toStringAsFixed(2)}'
+        ]);
+      });
+
+      return tableData;
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
+
+ Future<List<List<String>>> fetchPosisiKeuanganData() async {
+  final response = await http.get(Uri.parse('${dotenv.env['url']}/getbukuBesar'));
+  if (response.statusCode == 200) {
+    var jsonData = json.decode(response.body);
+    if (jsonData != null) {
+      Map<String, List<List<String>>> groupedData = {};
+      Map<String, double> subtotals = {};
+
+      for (var item in jsonData) {
+        String category = item['kelompok'] ?? 'Uncategorized'; // Default to 'Uncategorized' if null
+
+        // Filter to only include 'Pendapatan' or 'Beban'
+        if (category == "Pendapatan" || category == "Beban") {
+          continue; // Skip this iteration if category is not what we want
+        }
+
+        double amount = double.tryParse(item['debit']?.toString() ?? '0') ?? 0; // Safely parse and handle null and non-existent 'amount'
+
+        if (!groupedData.containsKey(category)) {
+          groupedData[category] = [];
+          subtotals[category] = 0.0;
+        }
+        groupedData[category]?.add([
+          category,
+          item['deskripsi'] ?? 'No description',
+          'Rp ${amount.toStringAsFixed(2)}'
+        ]);
+        subtotals[category] = subtotals[category]! + amount; // Safely add to subtotal, assuming it's already initialized
+      }
+
+      List<List<String>> tableData = [['Kategori', 'Deskripsi', 'Jumlah']];
+      groupedData.forEach((category, rows) {
+        tableData.addAll(rows);
+        tableData.add(['', 'Total $category', 'Rp ${subtotals[category]!.toStringAsFixed(2)}']); // Force-unwrapping is safe here
+      });
+
+      return tableData;
+    } else {
+      throw Exception('JSON data is null');
+    }
+  } else {
+    throw Exception('Failed to load data with status code: ${response.statusCode}');
+  }
+}
+
+Future<void> printPdf() async {
+    final pdf = pw.Document();
+    final data = selectedTab == 'Laba Rugi'
+        ? await fetchData()
+        : await fetchPosisiKeuanganData();
+
+    pdf.addPage(pw.MultiPage(
+        build: (context) => [
+              pw.Table.fromTextArray(
+                  context: context,
+                  data: data,
+                  headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                  headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+                  cellHeight: 30,
+                  cellAlignments: {
+                    0: pw.Alignment.centerLeft,
+                    1: pw.Alignment.centerLeft,
+                    2: pw.Alignment.centerRight,
+                  }),
+            ]));
+
+    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+  }
+
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+    fetchPosisiKeuanganData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,36 +213,37 @@ class _LaporanKeuanganState extends State<LaporanKeuangan> {
                     if (selectedTab == 'Laba Rugi')
                       buildSection('Laporan Laba Rugi'),
                     if (selectedTab == 'Laba Rugi')
-                      buildTable([
-                        ['Pendapatan', 'Keterangan', 'Jumlah'],
-                        ['Penjualan Produk', 'Total Penjualan', '200.000.000'],
-                        ['Pendapatan Lain', 'Pendapatan Sewa', '10.000.000'],
-                        ['Total Pendapatan', '', '210.000.000'],
-                        ['Beban', '', ''],
-                        ['Beban Gaji', 'Biaya Karyawan', '50.000.000'],
-                        ['Beban Sewa', 'Sewa tempat', '15.000.000'],
-                        ['Total Beban', '', '65.000.000'],
-                        ['Laba Bersih', '', '145.000.000'],
-                      ]),
+                      FutureBuilder<List<List<String>>>(
+                        future: fetchData(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Center(
+                                child: Text('Error: ${snapshot.error}'));
+                          } else {
+                            return buildTable(snapshot.data!);
+                          }
+                        },
+                      ),
                     if (selectedTab == 'Posisi Keuangan')
                       buildSection('Laporan Posisi Keuangan'),
                     if (selectedTab == 'Posisi Keuangan')
-                      buildTable([
-                        ['Aktiva', 'Keterangan', 'Jumlah'],
-                        ['Kas di Bank', 'Saldo Kas di rek', '50.000.000'],
-                        ['Kas di Tangan', 'Uang Tunai dimiliki', '5.000.000'],
-                        ['Piutang Usaha', 'Utang Anggota', '20.000.000'],
-                        ['Persediaan', 'Barang belum terjual', '30.000.000'],
-                        ['Total Aktiva Lancar', '', '105.000.000'],
-                        ['Aktiva Tetap', '', ''],
-                        ['Tanah dan Bangunan', 'Lokasi Koperasi', '200.000.000'],
-                        ['Peralatan Dapur', 'Peralatan Kulkas dll', '50.000.000'],
-                        ['Peralatan Kantor', 'Printer dll', '30.000.000'],
-                        ['Perlengkapan Kantin', 'Meja dll', '20.000.000'],
-                        ['Akumulasi Penyusutan', 'Penyusutan aset tetap', '-30.000.000'],
-                        ['Nilai Buku Aktiva Tetap', '', '370.000.000'],
-                        ['Total Aktiva', '', '475.000.000'],
-                      ]),
+                      FutureBuilder<List<List<String>>>(
+                        future: fetchPosisiKeuanganData(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Center(
+                                child: Text('Error: ${snapshot.error}'));
+                          } else {
+                            return buildTable(snapshot.data!);
+                          }
+                        },
+                      ),
                   ],
                 ),
               ),
@@ -126,7 +253,7 @@ class _LaporanKeuanganState extends State<LaporanKeuangan> {
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
               onPressed: () {
-                // Aksi cetak
+              printPdf();
               },
               child: Text('Cetak'),
             ),
@@ -162,31 +289,32 @@ class _LaporanKeuanganState extends State<LaporanKeuangan> {
       ),
     );
   }
-
-  Widget buildTable(List<List<String>> rows) {
-    return Table(
+Widget buildTable(List<List<String>> rows) {
+  return Container(
+    color: Colors.white, // Ensures the table background is white
+    padding: EdgeInsets.all(8.0), // Adds padding around the table
+    child: Table(
       border: TableBorder.all(color: Colors.grey),
-      columnWidths: {
-        0: FlexColumnWidth(2),
-        1: FlexColumnWidth(3),
-        2: FlexColumnWidth(2),
-      },
-      children: rows.map((row) {
+      children: rows.map((List<String> row) {
         return TableRow(
-          decoration: BoxDecoration(
-            color: Colors.grey[100], // Warna latar belakang lebih rapi
-          ),
-          children: row.map((cell) {
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
+          children: List<Widget>.generate(
+            3,
+            (index) => Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+              alignment: index == 2 ? Alignment.centerRight : Alignment.centerLeft,
               child: Text(
-                cell,
-                style: TextStyle(fontSize: 14, color: Colors.black),
+                index < row.length ? row[index] : '', // Fill missing entries with empty strings
+                style: TextStyle(
+                  color: Colors.black, // Ensures text color is black for contrast
+                ),
               ),
-            );
-          }).toList(),
+            ),
+          ),
         );
       }).toList(),
-    );
-  }
+    ),
+  );
+}
+
+  // Method to fetch data from API
 }

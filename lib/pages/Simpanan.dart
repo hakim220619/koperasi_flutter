@@ -31,7 +31,6 @@ class _SimpananScreenState extends State<SimpananScreen> {
       if (response.statusCode == 200) {
         setState(() {
           _data = json.decode(response.body);
-          print(_data);
           _isLoading = false;
         });
       } else {
@@ -96,8 +95,8 @@ class _SimpananScreenState extends State<SimpananScreen> {
                   ),
                   _buildTabContent(
                     _data['penarikan'],
-                    'Sisa Saldo',
-                    'Rp ${_data['sisa_saldo']}',
+                    'Penarikan',
+                    'Rp ${_data['pengeluaran']}',
                   ),
                 ],
               ),

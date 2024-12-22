@@ -52,13 +52,11 @@ class _RiwayatTransaksiScreenState extends State<RiwayatTransaksiScreen> {
 
         setState(() {
           transactions = data.map((item) {
-            double nominal = double.tryParse(item['jumlah'].toString()) ?? 0.0;
-
-            if (item['type'] == 'DEBIT') {
-              saldo += nominal;
-            } else if (item['type'] == 'KREDIT') {
-              saldo -= nominal;
-            }
+            double nominal = double.tryParse(
+                    item['debit'] != '0.00' && item['debit'] != null
+                        ? item['debit']
+                        : item['kredit']) ??
+                0.0;
 
             String formatRupiah(double value) {
               final numberFormat = NumberFormat.currency(
@@ -66,17 +64,26 @@ class _RiwayatTransaksiScreenState extends State<RiwayatTransaksiScreen> {
               return numberFormat.format(value);
             }
 
+            final typeFix = (item['debit'] != null && item['debit'] != '0.00')
+                ? 'Debit'
+                : 'Kredit';
+            if (typeFix == 'Debit') {
+              saldo += nominal;
+            } else {
+              saldo -= nominal;
+            }
             return {
-              'tanggal': item['tanggal_bayar'],
+              'tanggal': item['tanggal'],
               'jenis_transaksi': item['name'],
               'nominal': formatRupiah(nominal),
-              'type': item['type'],
+              'type': typeFix,
               'saldo_akhir': formatRupiah(saldo),
-              'deskripsi': item['keterangan'],
+              'deskripsi': item['deskripsi'],
             };
           }).toList();
 
-          filteredTransactions = transactions; // Initialize filteredTransactions with all data
+          filteredTransactions =
+              transactions; // Initialize filteredTransactions with all data
           isLoading = false;
         });
       } else {
@@ -108,10 +115,11 @@ class _RiwayatTransaksiScreenState extends State<RiwayatTransaksiScreen> {
     }
   }
 
-void _filterTransactions() {
+  void _filterTransactions() {
   if (startDate == null || endDate == null) {
     setState(() {
-      filteredTransactions = transactions; // Jika tidak ada filter tanggal, tampilkan semua transaksi
+      filteredTransactions =
+          transactions; // Jika tidak ada filter tanggal, tampilkan semua transaksi
     });
     return;
   }
@@ -125,9 +133,9 @@ void _filterTransactions() {
     filteredTransactions = transactions.where((transaction) {
       DateTime transactionDate =
           DateFormat('yyyy-MM-dd').parse(transaction['tanggal']);
-      // Pastikan hanya mencakup tanggal mulai dan tanggal akhir sesuai rentang yang dipilih
-      return transactionDate.isAfter(startDateNormalized) &&
-             transactionDate.isBefore(endDateNormalized);
+      // Pastikan hanya mencakup tanggal mulai hingga tanggal akhir
+      return !transactionDate.isBefore(startDateNormalized) &&
+          !transactionDate.isAfter(endDateNormalized);
     }).toList();
   });
 }
@@ -260,11 +268,13 @@ void _filterTransactions() {
                                 style: TextStyle(color: Colors.black))),
                             DataCell(Text(transaction['jenis_transaksi'] ?? '',
                                 style: TextStyle(color: Colors.black))),
-                            DataCell(Text(transaction['nominal'].toString() ?? '',
+                            DataCell(Text(
+                                transaction['nominal'].toString() ?? '',
                                 style: TextStyle(color: Colors.black))),
                             DataCell(Text(transaction['type'].toString() ?? '',
                                 style: TextStyle(color: Colors.black))),
-                            DataCell(Text(transaction['saldo_akhir'].toString() ?? '',
+                            DataCell(Text(
+                                transaction['saldo_akhir'].toString() ?? '',
                                 style: TextStyle(color: Colors.black))),
                             DataCell(Text(transaction['deskripsi'] ?? '',
                                 style: TextStyle(color: Colors.black))),
