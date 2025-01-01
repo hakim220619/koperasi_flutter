@@ -32,13 +32,19 @@ class _LoginScreenState extends State<LoginScreen> {
         _loginUrl,
         body: {"username": username, "password": password},
       );
-
       if (response.statusCode == 200) {
         var userData = jsonDecode(response.body);
+        print(userData['user']);
         SharedPreferences pref = await SharedPreferences.getInstance();
         await pref.setString("username", username);
         await pref.setString("id_user", userData['user']['id_user'].toString());
         await pref.setString("full_name", userData['user']['full_name'].toString());
+        await pref.setString("tlp", userData['user']['tlp'].toString());
+        await pref.setString("pekerjaan", userData['user']['pekerjaan'].toString());
+        await pref.setString("jabatan", userData['user']['jabatan'].toString());
+        await pref.setString("alamat", userData['user']['alamat'].toString());
+        await pref.setString("image", userData['user']['image'].toString());
+        await pref.setString("is_active", userData['user']['is_active'].toString());
         await pref.setBool("is_login", true);
         EasyLoading.dismiss();
 

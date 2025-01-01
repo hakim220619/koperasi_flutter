@@ -117,6 +117,19 @@ class _DashboardState extends State<Dashboard> {
                     ),
                   ),
       ),
+       bottomNavigationBar: BottomAppBar(
+        color: Colors.blue[800],
+        child: Padding(
+          padding: const EdgeInsets.all(0),
+          child: IconButton(
+            iconSize: 60,
+            icon: Icon(Icons.person, color: Colors.white),
+            onPressed: () {
+               Navigator.pushNamed(context, '/profile');
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -127,8 +140,8 @@ class _DashboardState extends State<Dashboard> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildIconOption("Riwayat\nTransaksi", Icons.receipt, onTap: () {
-            Navigator.pushNamed(context, '/riwayat_transaksi');
+          _buildIconOption("Jurnal\nUmum", Icons.receipt, onTap: () {
+            Navigator.pushNamed(context, '/jurnalUmum');
           }),
           _buildIconOption("Simpanan", Icons.account_balance_wallet, onTap: () {
             Navigator.pushNamed(context, '/simpanan');
@@ -136,8 +149,8 @@ class _DashboardState extends State<Dashboard> {
           _buildIconOption("Laporan\nKeuangan", Icons.pie_chart, onTap: () {
             Navigator.pushNamed(context, '/LaporanKeuangan');
           }),
-          _buildIconOption("Sisa Hasil\nUsaha", Icons.bar_chart, onTap: () {
-            // Aksi ketika Sisa Hasil Usaha diklik
+          _buildIconOption("Buku Besar", Icons.bar_chart, onTap: () {
+             Navigator.pushNamed(context, '/bukuBesar');
           }),
         ],
       ),

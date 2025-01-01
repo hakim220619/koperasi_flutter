@@ -4,10 +4,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:koperasi/pages/RiwayatTransaksi.dart';
 import 'package:koperasi/pages/Simpanan.dart';
+import 'package:koperasi/pages/bukuBesar.dart';
 import 'package:koperasi/pages/dashboard.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:koperasi/pages/jurnalUmum.dart';
 import 'package:koperasi/pages/laporanKeuangan.dart';
-import 'package:koperasi/pages/login.dart'; // Pastikan file LoginScreen sudah ada
+import 'package:koperasi/pages/login.dart';
+import 'package:koperasi/pages/person.dart'; // Pastikan file LoginScreen sudah ada
 
 Future<void> main() async {
   await dotenv.load();
@@ -46,8 +49,12 @@ class MyApp extends StatelessWidget {
         return MaterialPageRoute(builder: (_) => Dashboard());
       case '/simpanan':
         return MaterialPageRoute(builder: (_) => SimpananScreen());
-      case '/riwayat_transaksi':
-        return MaterialPageRoute(builder: (_) => RiwayatTransaksiScreen());
+      case '/jurnalUmum':
+        return MaterialPageRoute(builder: (_) => JurnalUmum());
+      case '/bukuBesar':
+        return MaterialPageRoute(builder: (_) => BukuBesar());
+      case '/profile':
+        return MaterialPageRoute(builder: (_) => ProfileScreen());
       case '/LaporanKeuangan':
         return MaterialPageRoute(builder: (_) => LaporanKeuangan());
       default:
