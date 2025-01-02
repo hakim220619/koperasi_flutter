@@ -201,61 +201,69 @@ class _JurnalUmumState extends State<JurnalUmum> {
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columns: [
-                          DataColumn(
-                            label: Text("Tanggal",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800])),
-                          ),
-                          DataColumn(
-                            label: Text("Nama Akun ",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800])),
-                          ),
-                          DataColumn(
-                            label: Text("Debit",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800])),
-                          ),
-                          DataColumn(
-                            label: Text("Kredit",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800])),
-                          ),
-                          DataColumn(
-                            label: Text("Keterangan Transaksi",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[800])),
-                          ),
-                         
-                        ],
-                        rows: filteredTransactions.map((transaction) {
-                          return DataRow(cells: [
-                            DataCell(Text(transaction['tanggal'] ?? '',
-                                style: TextStyle(color: Colors.black))),
-                            DataCell(Text(transaction['nama_akun'] ?? '',
-                                style: TextStyle(color: Colors.black))),
-                            DataCell(Text(
-                                transaction['debit'].toString() ?? '',
-                                style: TextStyle(color: Colors.black))),
-                            DataCell(Text(transaction['kredit'].toString() ?? '',
-                                style: TextStyle(color: Colors.black))),
-                            DataCell(Text(
-                                transaction['deskripsi'].toString() ?? '',
-                                style: TextStyle(color: Colors.black))),
-                           
-                          ]);
-                        }).toList(),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8.0),
+                        scrollDirection: Axis.horizontal,
+
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: Column(
+                          children: [
+                            DataTable(
+                              columns: [
+                                DataColumn(
+                                  label: Text("Tanggal",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue[800])),
+                                ),
+                                DataColumn(
+                                  label: Text("Nama Akun ",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue[800])),
+                                ),
+                                DataColumn(
+                                  label: Text("Debit",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue[800])),
+                                ),
+                                DataColumn(
+                                  label: Text("Kredit",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue[800])),
+                                ),
+                                DataColumn(
+                                  label: Text("Keterangan Transaksi",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue[800])),
+                                ),
+                               
+                              ],
+                              rows: filteredTransactions.map((transaction) {
+                                return DataRow(cells: [
+                                  DataCell(Text(transaction['tanggal'] ?? '',
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(transaction['nama_akun'] ?? '',
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(
+                                      transaction['debit'].toString() ?? '',
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(transaction['kredit'].toString() ?? '',
+                                      style: TextStyle(color: Colors.black))),
+                                  DataCell(Text(
+                                      transaction['deskripsi'].toString() ?? '',
+                                      style: TextStyle(color: Colors.black))),
+                                 
+                                ]);
+                              }).toList(),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
